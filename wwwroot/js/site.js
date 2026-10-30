@@ -47,6 +47,7 @@ if (form) {
         const reset = document.getElementById("reset-sql");
         if (reset) reset.inert = true;
         status.textContent = "Running…";
+        form.dispatchEvent(new CustomEvent("sql:execution-start"));
         try {
             const response = await fetch(form.action, { method: "POST", body: new FormData(form) });
             if (!response.ok) throw new Error(`Request failed (${response.status}).`);
@@ -69,6 +70,7 @@ if (form) {
             databaseSwitch.querySelector("button").disabled = false;
             originalView.inert = false;
             if (reset) reset.inert = false;
+            form.dispatchEvent(new CustomEvent("sql:execution-complete"));
         }
     });
     cancel.addEventListener("click", async () => {

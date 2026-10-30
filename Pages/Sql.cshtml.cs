@@ -35,4 +35,13 @@ public class SqlModel(DatabaseConnection database, MetadataService metadata, Que
         try { return new JsonResult(new { cancelled = queries.Cancel(executionId, Db) }); }
         catch (Exception ex) when (Expected(ex)) { return BadRequest(new { error = Message(ex) }); }
     }
+    public async Task<IActionResult> OnGetCompletionsAsync()
+    {
+        try
+        {
+            var selected = Connection.Resolve(Db,await Connection.DatabasesAsync(Ct));
+            return new JsonResult(await Metadata.CompletionsAsync(Ct,selected));
+        }
+        catch (Exception ex) when (Expected(ex)) { return BadRequest(new { error = Message(ex) }); }
+    }
 }

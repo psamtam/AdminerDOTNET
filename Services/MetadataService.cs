@@ -5,6 +5,38 @@ namespace AdminerDOTNET.Services;
 
 public sealed class MetadataService(DatabaseConnection database)
 {
+    public async Task<CompletionMetadata> CompletionsAsync(CancellationToken ct, string? db = null)
+    {
+        await using var connection = await database.OpenAsync(ct, db);
+        using var command = new SqlCommand("""
+            SELECT o.object_id, SCHEMA_NAME(o.schema_id), o.name, o.type, c.name,
+                COALESCE(bt.name,t.name), c.max_length, c.precision, c.scale
+            FROM sys.objects o JOIN sys.columns c ON c.object_id=o.object_id
+            JOIN sys.types t ON t.user_type_id=c.user_type_id
+            LEFT JOIN sys.types bt ON bt.user_type_id=c.system_type_id AND bt.user_type_id=bt.system_type_id
+            WHERE o.type IN ('U','V') AND o.is_ms_shipped=0
+            ORDER BY o.schema_id,o.name,c.column_id;
+            SELECT COALESCE(SCHEMA_NAME(),N'dbo');
+            """,connection);
+        using var reader = await command.ExecuteReaderAsync(ct);
+        var objects = new List<CompletionObject>();
+        CompletionObject? current = null;
+        while (await reader.ReadAsync(ct))
+        {
+            var id = reader.GetInt32(0);
+            if (current?.Id != id)
+            {
+                current = new(id,reader.GetString(1),reader.GetString(2),reader.GetString(3).Trim()=="V",[]);
+                objects.Add(current);
+            }
+            var type = new Column(0,reader.GetString(4),reader.GetString(5),reader.GetInt16(6),reader.GetByte(7),reader.GetByte(8),false,false,false,null,0,false);
+            current.Columns.Add(new(type.Name,type.DisplayType));
+        }
+        var defaultSchema = "dbo";
+        if (await reader.NextResultAsync(ct) && await reader.ReadAsync(ct)) defaultSchema = reader.GetString(0);
+        return new(db ?? connection.Database,objects,defaultSchema);
+    }
+
     public async Task<List<DbObject>> ObjectsAsync(CancellationToken ct, string? db = null)
     {
         await using var connection = await database.OpenAsync(ct, db);

@@ -3,11 +3,12 @@
 @{ ViewData["Title"] = "SQL command"; }
 <div class="eyebrow">@Model.DatabaseName</div><h1>SQL command</h1>
 <p class="muted">Run a T-SQL batch against the selected database. Full SQL access · 60-second timeout · no GO separators.</p>
-<form method="post" asp-page-handler="Run" asp-route-db="@Model.Db" id="sql-form">
+<form method="post" asp-page-handler="Run" asp-route-db="@Model.Db" id="sql-form" data-completion-url="@Url.Page("/Sql","Completions",new { db=Model.Db })">
     <input type="hidden" name="db" value="@Model.Db" />
     <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="ExecutionId" />
     <label class="sr-only" for="CommandText">SQL batch</label>
     <textarea asp-for="CommandText" class="sql-editor" spellcheck="false" placeholder="SELECT …" rows="10"></textarea>
+    <partial name="_SqlSuggestions" />
     <div class="toolbar"><button class="primary" type="submit" id="run-query">Run SQL <span class="keyboard">Ctrl + Enter</span></button><button type="button" id="cancel-query" disabled>Cancel</button><span id="query-status" role="status"></span></div>
 </form>
 <section id="execution" aria-live="polite">

@@ -6,14 +6,15 @@ namespace AdminerDOTNET.Services;
 
 public class DatabaseConnection(IConfiguration configuration)
 {
+    private readonly string? connectionString = configuration.GetConnectionString("DefaultConnection");
     public SqlConnectionStringBuilder Settings(string? db = null)
     {
-        var value = configuration.GetConnectionString("DefaultConnection");
+        var value = connectionString;
         if (string.IsNullOrWhiteSpace(value))
-            throw new InvalidOperationException("Set ConnectionStrings:DefaultConnection in appsettings.json or Development User Secrets, then retry.");
+            throw new InvalidOperationException("Set ConnectionStrings:DefaultConnection in connection.json beside the EXE (or Development User Secrets), then restart the app.");
         SqlConnectionStringBuilder settings;
         try { settings = new(value); }
-        catch (ArgumentException) { throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not a valid SQL Server connection string."); }
+        catch (ArgumentException) { throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not a valid SQL Server connection string. Check connection.json or your configuration override and restart the app."); }
         if (string.IsNullOrWhiteSpace(settings.InitialCatalog))
             throw new InvalidOperationException("Specify Database in ConnectionStrings:DefaultConnection. This app does not select a default server database.");
         if (db is not null) settings.InitialCatalog = db;
@@ -63,7 +64,7 @@ public class DatabaseConnection(IConfiguration configuration)
         catch (Exception ex) when (ex is SqlException or InvalidOperationException)
         {
             await connection.DisposeAsync();
-            throw new InvalidOperationException("Cannot connect to the selected database. Check database availability, your Windows account, and the configured connection string. Database discovery also requires the configured default to be accessible. If using an explicit pipe, its address may have changed after a restart.");
+            throw new InvalidOperationException("Cannot connect to the selected database. Check database availability, your Windows account, and connection.json beside the EXE (or its override), then restart after configuration changes. Database discovery also requires the configured default to be accessible. If using an explicit pipe, its address may have changed after a restart.");
         }
     }
 
@@ -71,7 +72,7 @@ public class DatabaseConnection(IConfiguration configuration)
     {
         get
         {
-            try { return new SqlConnectionStringBuilder(configuration.GetConnectionString("DefaultConnection") ?? "").InitialCatalog; }
+            try { return string.IsNullOrWhiteSpace(connectionString) ? "Not configured" : new SqlConnectionStringBuilder(connectionString).InitialCatalog; }
             catch { return "Not configured"; }
         }
     }

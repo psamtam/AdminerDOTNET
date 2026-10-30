@@ -13,5 +13,6 @@
     <Compile Remove="Tests/**/*.cs" />
     <Content Remove="Tests/**" />
     <None Remove="Tests/**" />
+    <Content Update="connection.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 </Project>

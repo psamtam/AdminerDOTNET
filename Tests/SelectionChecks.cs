@@ -73,6 +73,8 @@ public static class SelectionChecks
         check(selected.ConnectionString == original.ConnectionString, "Server, authentication, and other connection settings are retained");
         check(database.Settings().InitialCatalog == "AdminerTest", "Selecting another database never changes configuration");
 
+        var completion = await metadata.CompletionsAsync(ct,other);
+        check(completion.Database==other && database.Requested.All(name=>name==other),"Completion metadata propagates simulated database selection without opening another database");
         var table = await metadata.GetAsync(fixtureId, ct, other);
         var fields = table.Columns.Where(c=>c.Writable).ToDictionary(c=>c.Id,c=>new FieldInput("default",null));
         var textColumn = table.Columns.Single(c=>c.Name=="Text");

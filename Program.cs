@@ -4,7 +4,15 @@ using System.Net;
 
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = AppContext.BaseDirectory });
+try { ExternalConnectionConfiguration.Add(builder.Configuration, AppContext.BaseDirectory); }
+catch (InvalidOperationException ex)
+{
+    // Do not log JSON parser exceptions: their source excerpts can contain credentials.
+    Console.Error.WriteLine(ex.Message);
+    Environment.ExitCode = 1;
+    return;
+}
 builder.WebHost.UseUrls("http://127.0.0.1:5186");
 // Nested filters are carried in URLs; the application separately limits their decoded size/depth.
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestLineSize = 65536);
@@ -15,6 +23,8 @@ builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<TableService>();
 builder.Services.AddSingleton<QueryService>();
 var app = builder.Build();
+// Freeze the effective connection at startup, including when other configuration providers reload.
+_ = app.Services.GetRequiredService<DatabaseConnection>();
 // A local database tool must not accept requests forwarded from another machine.
 app.Use(async (context, next) =>
 {

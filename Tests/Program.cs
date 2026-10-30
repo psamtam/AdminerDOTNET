@@ -14,6 +14,7 @@ void Check(bool condition, string message)
     if (!condition) throw new Exception("FAILED: " + message);
     Console.WriteLine("PASS: " + message); checks++;
 }
+ConnectionConfigurationChecks.Run(Check);
 async Task Reject(Func<Task> action, string message)
 {
     try { await action(); } catch (InvalidOperationException) { Check(true,message); return; }
@@ -189,6 +190,7 @@ try
     await SelectionChecks.RunAsync(config,plainObj.Id,Check);
     await BrowseChecks.RunAsync(config,Check);
     await BulkDeleteChecks.RunAsync(config,Check);
+    await CompletionMetadataChecks.RunAsync(config,Check);
     Console.WriteLine($"SUCCESS: {checks} checks passed.");
 }
 finally

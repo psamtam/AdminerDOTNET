@@ -20,6 +20,7 @@ public abstract class DatabasePage(DatabaseConnection database, MetadataService 
     public string? Error { get; protected set; }
     protected CancellationToken Ct => HttpContext.RequestAborted;
     protected MetadataService Metadata => metadata;
+    protected DatabaseConnection Connection => database;
     protected async Task<bool> LoadAsync()
     {
         try

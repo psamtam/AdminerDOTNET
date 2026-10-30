@@ -5,12 +5,13 @@
 {
     <div class="title-row"><div><div class="eyebrow">@Model.DatabaseName · @(table.Object.IsView ? "VIEW" : "TABLE")</div><h1>@table.Object.Label</h1></div></div>
     <nav class="tabs"><a class="active" asp-page="/Browse" asp-route-db="@Model.Db" asp-route-id="@Model.Id">Browse</a><a asp-page="/Structure" asp-route-db="@Model.Db" asp-route-id="@Model.Id">Structure</a><a asp-page="/Sql" asp-route-db="@Model.Db" asp-route-id="@Model.Id">SQL command</a></nav>
-    <form method="post" asp-page-handler="Run" asp-route-db="@Model.Db" id="sql-form" data-browse="true">
+    <form method="post" asp-page-handler="Run" asp-route-db="@Model.Db" id="sql-form" data-browse="true" data-completion-url="@Url.Page("/Sql","Completions",new { db=Model.Db })">
         <input type="hidden" name="db" value="@Model.Db" /><input type="hidden" asp-for="Id" />
         <input type="hidden" name="P" value="@Model.P" /><input type="hidden" name="Sort" value="@Model.Sort" /><input type="hidden" name="Desc" value="@Model.Desc.ToString()" />
         <input type="hidden" name="Filters" value="@Model.Filters" /><input type="hidden" asp-for="ExecutionId" />
         <label for="CommandText" class="editor-label">SQL for this view</label>
         <textarea asp-for="CommandText" class="sql-editor browse-editor" spellcheck="false" rows="7"></textarea>
+        <partial name="_SqlSuggestions" />
         <div class="toolbar"><button class="primary" id="run-query">Execute <span class="keyboard">Ctrl + Enter</span></button><button type="button" id="cancel-query" disabled>Cancel</button><a class="button" id="reset-sql" href="@Model.PageLink(Model.P)">Reset SQL</a><span id="query-status" role="status"></span></div>
     </form>
     <section id="browse-view">
