@@ -9,7 +9,8 @@
     <label class="sr-only" for="CommandText">SQL batch</label>
     <textarea asp-for="CommandText" class="sql-editor" spellcheck="false" placeholder="SELECT …" rows="10"></textarea>
     <partial name="_SqlSuggestions" />
-    <div class="toolbar"><button class="primary" type="submit" id="run-query">Run SQL <span class="keyboard">Ctrl + Enter</span></button><button type="button" id="cancel-query" disabled>Cancel</button><span id="query-status" role="status"></span></div>
+    <div class="toolbar"><button class="primary" type="submit" id="run-query">Run SQL <span class="keyboard">Ctrl + Enter</span></button><partial name="_ExportButton" /><button type="button" id="cancel-query" disabled>Cancel</button><span id="query-status" role="status"></span></div>
+    <section id="export-result" aria-live="polite" hidden></section>
 </form>
 <section id="execution" aria-live="polite">
 @if (Model.Result is { } result)

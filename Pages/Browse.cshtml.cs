@@ -92,4 +92,6 @@ public class BrowseModel(DatabaseConnection database, MetadataService metadata, 
         }
         return Redirect(PageLink(P));
     }
+    public Task<IActionResult> OnPostExportAsync([FromServices] CsvExportStore store)
+        => ExportAsync(queries, store, ExecutionId, CommandText ?? "");
 }

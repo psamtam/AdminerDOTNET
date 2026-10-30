@@ -12,7 +12,8 @@
         <label for="CommandText" class="editor-label">SQL for this view</label>
         <textarea asp-for="CommandText" class="sql-editor browse-editor" spellcheck="false" rows="7"></textarea>
         <partial name="_SqlSuggestions" />
-        <div class="toolbar"><button class="primary" id="run-query">Execute <span class="keyboard">Ctrl + Enter</span></button><button type="button" id="cancel-query" disabled>Cancel</button><a class="button" id="reset-sql" href="@Model.PageLink(Model.P)">Reset SQL</a><span id="query-status" role="status"></span></div>
+        <div class="toolbar"><button class="primary" id="run-query">Execute <span class="keyboard">Ctrl + Enter</span></button><partial name="_ExportButton" /><button type="button" id="cancel-query" disabled>Cancel</button><a class="button" id="reset-sql" href="@Model.PageLink(Model.P)">Reset SQL</a><span id="query-status" role="status"></span></div>
+        <section id="export-result" aria-live="polite" hidden></section>
     </form>
     <section id="browse-view">
     @if (Model.CustomMode)

@@ -35,6 +35,19 @@ public class SqlModel(DatabaseConnection database, MetadataService metadata, Que
         try { return new JsonResult(new { cancelled = queries.Cancel(executionId, Db) }); }
         catch (Exception ex) when (Expected(ex)) { return BadRequest(new { error = Message(ex) }); }
     }
+    public Task<IActionResult> OnPostExportAsync([FromServices] CsvExportStore store)
+        => ExportAsync(queries, store, ExecutionId, CommandText);
+    public async Task<IActionResult> OnGetDownloadAsync(string token, [FromServices] CsvExportStore store)
+    {
+        try
+        {
+            var selected = Connection.Resolve(Db, await Connection.DatabasesAsync(Ct));
+            var stream = store.Open(token ?? "", Connection.ContextIdentity(selected));
+            if (stream is null) return NotFound("This export is unavailable or expired. Execute & export CSV again.");
+            return File(stream, "application/zip", "sql-results.zip");
+        }
+        catch (Exception ex) when (Expected(ex)) { return BadRequest(new { error = Message(ex) }); }
+    }
     public async Task<IActionResult> OnGetCompletionsAsync()
     {
         try

@@ -22,6 +22,8 @@ builder.Services.AddSingleton<DatabaseConnection>();
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<TableService>();
 builder.Services.AddSingleton<QueryService>();
+builder.Services.AddSingleton<CsvExportStore>();
+builder.Services.AddHostedService(services => services.GetRequiredService<CsvExportStore>());
 var app = builder.Build();
 // Freeze the effective connection at startup, including when other configuration providers reload.
 _ = app.Services.GetRequiredService<DatabaseConnection>();

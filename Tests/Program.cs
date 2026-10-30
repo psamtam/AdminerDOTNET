@@ -28,6 +28,12 @@ var metadata = new MetadataService(database);
 var tables = new TableService(database, metadata, new EphemeralDataProtectionProvider());
 var queries = new QueryService(database);
 var ct = CancellationToken.None;
+if (args.Contains("--export-only"))
+{
+    await ExportChecks.RunAsync(config,Check,!args.Contains("--skip-timeout"));
+    Console.WriteLine($"SUCCESS: {checks} checks passed.");
+    return;
+}
 await using var connection = await database.OpenAsync(ct);
 async Task Execute(string sql)
 {
@@ -191,6 +197,7 @@ try
     await BrowseChecks.RunAsync(config,Check);
     await BulkDeleteChecks.RunAsync(config,Check);
     await CompletionMetadataChecks.RunAsync(config,Check);
+    await ExportChecks.RunAsync(config,Check,!args.Contains("--skip-timeout"));
     Console.WriteLine($"SUCCESS: {checks} checks passed.");
 }
 finally
