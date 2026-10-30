@@ -1,0 +1,29 @@
+@page
+@model SqlModel
+@{ ViewData["Title"] = "SQL command"; }
+<div class="eyebrow">@Model.DatabaseName</div><h1>SQL command</h1>
+<p class="muted">Run a T-SQL batch against the selected database. Full SQL access · 60-second timeout · no GO separators.</p>
+<form method="post" asp-page-handler="Run" asp-route-db="@Model.Db" id="sql-form">
+    <input type="hidden" name="db" value="@Model.Db" />
+    <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="ExecutionId" />
+    <label class="sr-only" for="CommandText">SQL batch</label>
+    <textarea asp-for="CommandText" class="sql-editor" spellcheck="false" placeholder="SELECT …" rows="10"></textarea>
+    <div class="toolbar"><button class="primary" type="submit" id="run-query">Run SQL <span class="keyboard">Ctrl + Enter</span></button><button type="button" id="cancel-query" disabled>Cancel</button><span id="query-status" role="status"></span></div>
+</form>
+<section id="execution" aria-live="polite">
+@if (Model.Result is { } result)
+{
+    @if (result.Error is not null) { <div class="notice error" role="alert">@result.Error</div> }
+    <div class="result-summary">@result.Milliseconds.ToString("N0") ms · @result.Grids.Count result set(s) @if (result.Affected >= 0) { <span>· @result.Affected affected row(s)</span> }</div>
+    @foreach (var message in result.Messages) { <pre class="notice">@message</pre> }
+    var number = 0;
+    @foreach (var grid in result.Grids)
+    {
+        <h2>Result @(++number) <small>@grid.Rows.Count rows displayed</small></h2>
+        @if (grid.Truncated) { <p class="notice">Display truncated: at most 1,000 rows per result set and 10,000 cells overall. The batch continued executing.</p> }
+        <div class="panel table-scroll"><table class="data-table"><thead><tr>@foreach (var column in grid.Columns) { <th>@column</th> }</tr></thead><tbody>
+        @foreach (var row in grid.Rows) { <tr>@foreach (var cell in row) { <td class="cell">@if (cell is null) { <em class="null">NULL</em> } else { <span>@cell</span> }</td> }</tr> }
+        </tbody></table></div>
+    }
+}
+</section>

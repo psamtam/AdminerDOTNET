@@ -1,0 +1,13 @@
+@model QueryResult
+@if (Model.Error is not null) { <div class="notice error" role="alert">@Model.Error</div> }
+<div class="result-summary">@Model.Milliseconds.ToString("N0") ms · @Model.Grids.Count result set(s) @if (Model.Affected >= 0) { <span>· @Model.Affected affected row(s)</span> }</div>
+@foreach (var message in Model.Messages) { <pre class="notice">@message</pre> }
+@{ var number = 0; }
+@foreach (var grid in Model.Grids)
+{
+    <h2>Result @(++number) <small>@grid.Rows.Count rows displayed</small></h2>
+    @if (grid.Truncated) { <p class="notice">Display truncated: at most 1,000 rows per result set and 10,000 cells overall. The batch continued executing.</p> }
+    <div class="panel table-scroll"><table class="data-table"><thead><tr>@foreach (var column in grid.Columns) { <th>@column</th> }</tr></thead><tbody>
+    @foreach (var row in grid.Rows) { <tr>@foreach (var cell in row) { <td class="cell">@if (cell is null) { <em class="null">NULL</em> } else { <span>@cell</span> }</td> }</tr> }
+    </tbody></table></div>
+}

@@ -1,0 +1,5 @@
+@page
+@model ErrorModel
+@{ ViewData["Title"] = "Error"; }
+<h1>Unable to complete the request</h1>
+<a asp-page="/Index" asp-route-db="@Model.Db">Return to Overview</a>

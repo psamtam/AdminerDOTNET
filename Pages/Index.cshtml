@@ -1,0 +1,17 @@
+@page
+@model IndexModel
+@{ ViewData["Title"] = "Overview"; }
+<div class="title-row"><div><div class="eyebrow">DATABASE</div><h1>@Model.DatabaseName</h1></div><a class="button primary" asp-page="/Sql" asp-route-db="@Model.Db">SQL command</a></div>
+<p class="muted">Browse records, inspect structure, or run a SQL command.</p>
+@if (Model.Error is null)
+{
+    <div class="panel">
+    <table><thead><tr><th>Table / view</th><th>Type</th><th>Actions</th></tr></thead><tbody>
+    @foreach (var obj in Model.Objects)
+    {
+        <tr><td><a asp-page="/Browse" asp-route-db="@Model.Db" asp-route-id="@obj.Id">@obj.Label</a></td><td>@(obj.IsView ? "View" : "Table")</td><td><a asp-page="/Browse" asp-route-db="@Model.Db" asp-route-id="@obj.Id">Browse</a> <a asp-page="/Structure" asp-route-db="@Model.Db" asp-route-id="@obj.Id">Structure</a></td></tr>
+    }
+    </tbody></table>
+    @if (Model.Objects.Count == 0) { <p class="empty">No tables or views. Create one using SQL command.</p> }
+    </div>
+}

@@ -1,0 +1,16 @@
+@page
+@model StructureModel
+@{ ViewData["Title"] = "Structure"; }
+@if (Model.Table is { } table)
+{
+    <div class="eyebrow">STRUCTURE</div><h1>@table.Object.Label</h1>
+    <nav class="tabs"><a asp-page="/Browse" asp-route-db="@Model.Db" asp-route-id="@Model.Id">Browse</a><a class="active" asp-page="/Structure" asp-route-db="@Model.Db" asp-route-id="@Model.Id">Structure</a><a asp-page="/Sql" asp-route-db="@Model.Db" asp-route-id="@Model.Id">SQL command</a></nav>
+    <div class="panel table-scroll"><table><thead><tr><th>Column</th><th>Type</th><th>Nullable</th><th>Default</th><th>Attributes</th></tr></thead><tbody>
+    @foreach (var c in table.Columns)
+    {
+        <tr><td><strong>@c.Name</strong></td><td class="mono">@c.DisplayType</td><td>@(c.Nullable ? "Yes" : "No")</td><td class="mono">@c.Default</td><td>@(c.KeyOrder > 0 ? $"PK ({c.KeyOrder}) " : "") @(c.Identity ? "Identity " : "") @(c.Computed ? "Computed " : "") @(c.IsVersion ? "Rowversion " : "") @(c.Generated ? "Generated " : "") @(!c.Writable ? "· read-only" : "")</td></tr>
+    }
+    </tbody></table></div>
+    <h2>Indexes</h2><div class="panel list-panel">@if (table.Indexes.Count == 0) { <p class="muted">No indexes.</p> } @foreach (var index in table.Indexes) { <p class="mono">@index</p> }</div>
+    <h2>Foreign keys</h2><div class="panel list-panel">@if (table.ForeignKeys.Count == 0) { <p class="muted">No foreign keys.</p> } @foreach (var key in table.ForeignKeys) { <p class="mono">@key</p> }</div>
+}

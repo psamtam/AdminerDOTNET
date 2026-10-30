@@ -1,0 +1,57 @@
+@model AdminerDOTNET.Pages.DatabasePage
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · @Model.DatabaseName · Adminer.NET</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
+</head>
+<body>
+<aside>
+    <a class="brand" asp-page="/Index" asp-route-db="@Model.Db">Adminer<span>.NET</span></a>
+    <div class="connection-label">LOCAL DATABASE</div>
+    <form method="get" asp-page="/Index" id="database-switch" class="database-switch">
+        <label class="sr-only" for="database-select">Database</label>
+        <select name="db" id="database-select" data-current="@Model.DatabaseName">
+        @if (!Model.Databases.Contains(Model.DatabaseName))
+        {
+            <option value="@Model.DatabaseName" selected disabled>@Model.DatabaseName (unavailable)</option>
+        }
+        @foreach (var name in Model.Databases)
+        {
+            <option value="@name" selected="@(name == Model.DatabaseName)">@name</option>
+        }
+        </select>
+        <button type="submit">Open</button>
+    </form>
+    <nav class="primary-nav"><a asp-page="/Index" asp-route-db="@Model.Db">Overview</a><a asp-page="/Sql" asp-route-db="@Model.Db">SQL command</a></nav>
+    <div class="sidebar-heading">Tables &amp; views <span>@Model.Objects.Count</span></div>
+    <input type="search" id="object-search" placeholder="Find a table…" aria-label="Find a table or view" />
+    <nav class="objects" aria-label="Tables and views">
+    @foreach (var obj in Model.Objects)
+    {
+        <a class="@(Model.SelectedId == obj.Id ? "selected" : "")" asp-page="/Browse" asp-route-db="@Model.Db" asp-route-id="@obj.Id"><span class="object-icon">@(obj.IsView ? "V" : "T")</span>@obj.Label</a>
+    }
+    </nav>
+    <footer>LocalDB · Windows authentication<br />Development workspace</footer>
+</aside>
+<main>
+    <header><span>@Model.DatabaseName</span><span class="badge">LOCAL</span></header>
+    @if (Model.Error is not null)
+    {
+        <div class="notice error" role="alert">@Model.Error <a href="@Context.Request.Path@Context.Request.QueryString">Retry</a></div>
+    }
+    @if (TempData["Message"] is string message)
+    {
+        <div class="notice success" role="status">@message</div>
+    }
+    @if (TempData["BulkDeleteError"] is string deletionError)
+    {
+        <div class="notice error" role="alert">@deletionError</div>
+    }
+    @RenderBody()
+</main>
+</body>
+</html>

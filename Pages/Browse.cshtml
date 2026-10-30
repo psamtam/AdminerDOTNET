@@ -1,0 +1,96 @@
+@page
+@model BrowseModel
+@{ ViewData["Title"] = Model.Table?.Object.Label ?? "Browse"; }
+@if (Model.Table is { } table)
+{
+    <div class="title-row"><div><div class="eyebrow">@Model.DatabaseName · @(table.Object.IsView ? "VIEW" : "TABLE")</div><h1>@table.Object.Label</h1></div></div>
+    <nav class="tabs"><a class="active" asp-page="/Browse" asp-route-db="@Model.Db" asp-route-id="@Model.Id">Browse</a><a asp-page="/Structure" asp-route-db="@Model.Db" asp-route-id="@Model.Id">Structure</a><a asp-page="/Sql" asp-route-db="@Model.Db" asp-route-id="@Model.Id">SQL command</a></nav>
+    <form method="post" asp-page-handler="Run" asp-route-db="@Model.Db" id="sql-form" data-browse="true">
+        <input type="hidden" name="db" value="@Model.Db" /><input type="hidden" asp-for="Id" />
+        <input type="hidden" name="P" value="@Model.P" /><input type="hidden" name="Sort" value="@Model.Sort" /><input type="hidden" name="Desc" value="@Model.Desc.ToString()" />
+        <input type="hidden" name="Filters" value="@Model.Filters" /><input type="hidden" asp-for="ExecutionId" />
+        <label for="CommandText" class="editor-label">SQL for this view</label>
+        <textarea asp-for="CommandText" class="sql-editor browse-editor" spellcheck="false" rows="7"></textarea>
+        <div class="toolbar"><button class="primary" id="run-query">Execute <span class="keyboard">Ctrl + Enter</span></button><button type="button" id="cancel-query" disabled>Cancel</button><a class="button" id="reset-sql" href="@Model.PageLink(Model.P)">Reset SQL</a><span id="query-status" role="status"></span></div>
+    </form>
+    <section id="browse-view">
+    @if (Model.CustomMode)
+    {
+        <div class="notice">Custom SQL results · Filters, table sorting, pagination, and record actions are suspended. Reset SQL to return to the last applied table view.</div>
+        <section id="execution" aria-live="polite">@if (Model.Query is { } query) { <partial name="_QueryResult" model="query" /> }</section>
+    }
+    else
+    {
+        <form method="get" id="filters-form" class="panel filter-panel">
+            <input type="hidden" name="db" value="@Model.Db" /><input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="sort" value="@Model.Sort" /><input type="hidden" name="desc" value="@Model.Desc.ToString()" />
+            <input type="hidden" name="filters" id="filters-state" value="@Model.Filters" />
+            <div class="title-row"><strong>Filters</strong><span class="muted">Applied by SQL Server after you click Apply</span></div>
+            <div id="filter-builder" data-columns="@Model.FilterColumns" data-state="@Model.Filters"></div>
+            <noscript><p>JavaScript is needed to edit grouped filters. Existing filters and SQL execution remain available.</p></noscript>
+            <div class="toolbar"><button type="submit" class="primary">Apply filters</button><a href="@Model.ClearLink">Clear filters</a></div>
+        </form>
+        @if (Model.Result is { } result)
+        {
+            @if (table.Keys.Count == 0) { <p class="notice">No primary key: ordering may change between requests. Record actions affect one matching row; identical copies cannot be distinguished.</p> }
+            @if (!table.CanEdit) { <p class="notice">Record editing is unavailable for views or types that cannot be matched reliably. Use SQL for these objects.</p> }
+            <div class="toolbar">
+                @if (table.CanInsert) { <a class="button primary" asp-page="/Record" asp-route-db="@Model.Db" asp-route-id="@Model.Id">+ Insert record</a> }
+                @if (table.CanEdit)
+                {
+                    <form method="post" asp-page-handler="DeleteSelected" asp-route-db="@Model.Db" id="bulk-delete-form">
+                        <input type="hidden" name="db" value="@Model.Db" /><input type="hidden" name="Id" value="@Model.Id" />
+                        <input type="hidden" name="P" value="@Model.P" /><input type="hidden" name="Sort" value="@Model.Sort" /><input type="hidden" name="Desc" value="@Model.Desc.ToString()" /><input type="hidden" name="Filters" value="@Model.Filters" />
+                        <button type="submit" class="danger" id="delete-selected" disabled>Delete selected</button>
+                    </form>
+                    <span id="selection-count" class="muted" role="status">0 selected on this page</span>
+                }
+                <span class="muted">@result.Rows.Count records displayed</span>
+            </div>
+            <div class="panel table-scroll"><table class="data-table"><thead><tr>
+            @if (table.CanEdit) { <th class="selection-cell"><input type="checkbox" id="select-page" aria-label="Select all rows on this page" disabled="@(result.Rows.Count == 0)" /></th><th>Record</th> }
+            @foreach (var column in table.Columns)
+            {
+                <th><a href="@Model.PageLink(1,column.Id,Model.Sort == column.Id && !Model.Desc)">@column.Name @(Model.Sort == column.Id ? Model.Desc ? "↓" : "↑" : "")</a><small>@column.DisplayType @(column.KeyOrder > 0 ? "· PK" : "")</small></th>
+            }
+            </tr></thead><tbody>
+            @{ var rowNumber = result.FirstRow; }
+            @foreach (var row in result.Rows)
+            {
+                <tr>
+                @if (table.CanEdit)
+                {
+                    <td class="selection-cell"><input type="checkbox" class="row-select" name="SelectedTokens" value="@row.Token" form="bulk-delete-form" aria-label="Select row @rowNumber" /></td>
+                    <td><form method="post" asp-page="/Record" asp-page-handler="Open" asp-route-db="@Model.Db"><input type="hidden" name="db" value="@Model.Db" /><input type="hidden" name="Id" value="@Model.Id" /><input type="hidden" name="Token" value="@row.Token" /><button class="link-button" type="submit">Edit</button></form></td>
+                }
+                @foreach (var cell in row.Values) { <td class="cell">@if (cell is null) { <em class="null">NULL</em> } else { <span title="@cell">@(cell.Length > 240 ? cell[..240] + "…" : cell)</span> }</td> }
+                </tr>
+                rowNumber++;
+            }
+            </tbody></table>
+            @if (result.Rows.Count == 0) { <p class="empty">No records match.</p> }
+            </div>
+            <div class="pagination">
+                <span>@result.FirstRow.ToString("N0")–@result.LastRow.ToString("N0") of @result.MatchingRows.ToString("N0") matching rows · @result.TotalRows.ToString("N0") total rows · Page @result.Page of @result.TotalPages · 100 per page</span>
+                @if (result.TotalPages > 0)
+                {
+                    <nav aria-label="Record pages">
+                    @if (result.Page > 1) { <a class="button" href="@Model.PageLink(1)">First</a><a class="button" href="@Model.PageLink(result.Page-1)">Previous</a> }
+                    @for (var p = Math.Max(1,result.Page-2); p <= Math.Min(result.TotalPages,result.Page+2); p++)
+                    {
+                        @if (p == result.Page) { <span class="button primary" aria-current="page">@p</span> } else { <a class="button" href="@Model.PageLink(p)">@p</a> }
+                    }
+                    @if (result.HasNext) { <a class="button" href="@Model.PageLink(result.Page+1)">Next</a><a class="button" href="@Model.PageLink(result.TotalPages)">Last</a> }
+                    </nav>
+                    <form method="get" class="page-jump">
+                        <input type="hidden" name="db" value="@Model.Db" /><input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="sort" value="@Model.Sort" /><input type="hidden" name="desc" value="@Model.Desc.ToString()" /><input type="hidden" name="filters" value="@Model.Filters" />
+                        <label>Page <input name="p" type="number" min="1" max="@result.TotalPages" value="@result.Page" required aria-label="Jump to page" /></label><button>Go</button>
+                    </form>
+                }
+            </div>
+        }
+    }
+    </section>
+}
+<script src="~/js/browse.js" asp-append-version="true" defer></script>
+<script src="~/js/selection.js" asp-append-version="true" defer></script>
