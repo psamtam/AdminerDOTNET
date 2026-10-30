@@ -1,6 +1,6 @@
 # AdminerDOTNET
 
-A compact LocalDB browser and editor built with .NET 10 Razor Pages and Microsoft.Data.SqlClient. This version is intended for Visual Studio Debug sessions on Windows, including an x64 process on Windows ARM64.
+A compact LocalDB browser and editor built with .NET 10 Razor Pages and Microsoft.Data.SqlClient. Visual Studio Debug/x64 remains the development workflow on Windows, including an x64 process on Windows ARM64. The implementation also supports Release publishing, though Release output has not yet been validated.
 
 ## Run in Visual Studio
 
@@ -9,6 +9,22 @@ A compact LocalDB browser and editor built with .NET 10 Razor Pages and Microsof
 3. Press **F5**. The browser opens at **http://127.0.0.1:5186**. Stop debugging in Visual Studio to stop the app.
 
 No publishing or deployment is required. The .NET 10 SDK, x64 .NET 10 ASP.NET Core runtime, and an existing LocalDB installation are needed. Restore NuGet packages when prompted. Port 5186 must be free.
+
+## Run a Release publish
+
+To create framework-dependent Windows x64 output yourself, run from the project directory:
+
+```powershell
+dotnet publish AdminerDOTNET.csproj -c Release -r win-x64 --self-contained false
+```
+
+Use the output directory reported by the command. Keep the **complete publish folder**, including `wwwroot` (CSS and SQL suggestion JavaScript), `connection.json`, configuration files, and runtime dependencies; copying only the EXE is insufficient. This framework-dependent output requires the **x64 .NET 10 ASP.NET Core runtime**, including on Windows ARM64, plus your existing LocalDB installation.
+
+Edit `connection.json` beside the published `AdminerDOTNET.exe`, then launch the EXE under the Windows account that owns LocalDB. **Restart the app after connection changes**, and preserve your edited file when replacing application files during upgrades. The external connection file and SQL suggestions are available in Release as well as Debug.
+
+Launching the published EXE normally uses the Production environment, where Development User Secrets do not apply; provide the connection through `connection.json` or an environment/command-line override. Build configuration and environment are separate: Release does not itself force Production, but Visual Studio's Development launch profile is not applied when you launch the published EXE directly.
+
+Open **http://127.0.0.1:5186** manually after launching. Automatic browser launch belongs to Visual Studio's launch profile; the published app does not open a browser. Port 5186 must be free. Release publishing and runtime behavior have not yet been tested; these are usage instructions, not a claim of Release validation.
 
 ## Connection
 
@@ -74,4 +90,4 @@ The solution build is available with `dotnet build AdminerDOTNET.sln --configura
 
 ## Current boundaries
 
-No server selector, shared/remembered database selection, visual schema designer, import/export, query history, application database, or migrations. Schema changes are available through SQL. Publishing and release packaging are intentionally deferred.
+No server selector, shared/remembered database selection, visual schema designer, import/export, query history, application database, or migrations. Schema changes are available through SQL. Release publishing instructions are provided above; Release validation, packaging, and deployment remain outside the completed development checks.
